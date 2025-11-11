@@ -1,0 +1,81 @@
+import sqlite3
+import tkinter as tk
+from tkinter import messagebox
+from tkinter import ttk
+
+# Function to create the database and products table if it doesn't exist
+def create_database():
+    conn = sqlite3.connect("products.db")  # Connect to (or create) the database
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS products (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            shelf INTEGER NOT NULL,
+            row INTEGER NOT NULL
+        )
+    """)  # SQL query to create table
+    conn.commit()
+    conn.close()
+
+# Function to add sample product data into the database
+def add_sample_data():
+    conn = sqlite3.connect("products.db")  # Connect to the database
+    cursor = conn.cursor()
+    cursor.executemany("""
+        INSERT INTO products (name, shelf, row) VALUES (?, ?, ?)
+    """, [
+        ("Milk", 2, 4),
+        ("Bread", 3, 1),
+        ("Eggs", 1, 2),
+        ("Butter", 4, 3)
+    ])  # Insert multiple product records
+    conn.commit()
+    conn.close()
+
+# Function to search for a product and display its shelf and row
+def search_product():
+    product_name = entry.get().strip().lower()  # Get user input and convert to lowercase
+    if not product_name:
+        messagebox.showwarning("Input Error", "Please enter a product name")
+        return  # Stop execution if input is empty
+    
+    conn = sqlite3.connect("products.db")  # Connect to the database
+    cursor = conn.cursor()
+    cursor.execute("SELECT shelf, row FROM products WHERE LOWER(name) = ?", (product_name,))
+    result = cursor.fetchone()  # Fetch the result
+    conn.close()
+    
+    if result:
+        shelf, row = result
+        result_label.config(text=f"{product_name.capitalize()} is at Shelf {shelf}, Row {row}")  # Display product location
+    else:
+        result_label.config(text="Product not found")  # Display if product is not found
+
+# Modern Themed GUI Setup
+root = tk.Tk()  # Create main window
+root.title("Product Locator")  # Set window title
+root.geometry("400x300")  # Set window size
+root.resizable(False, False)  # Disable window resizing
+root.configure(bg="#F0F0F0")  # Set background color
+
+# Create and pack UI elements
+title_label = tk.Label(root, text="Search for a Product", font=("Arial", 16, "bold"), fg="#333", bg="#F0F0F0")
+title_label.pack(pady=15)  # Label for instructions
+
+entry = ttk.Entry(root, font=("Arial", 12), width=30)  # Styled entry field for user input
+entry.pack(pady=5)
+
+search_button = ttk.Button(root, text="Search", command=search_product)  # Styled search button
+search_button.pack(pady=10)
+
+result_label = tk.Label(root, text="", font=("Arial", 12), fg="#007BFF", bg="#F0F0F0")  # Label to display search result
+result_label.pack(pady=10)
+
+# Database setup (creates database and adds sample data if needed)
+create_database()
+add_sample_data()
+
+# Run the Tkinter main event loop
+root.mainloop()
+
